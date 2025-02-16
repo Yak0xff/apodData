@@ -1,0 +1,39 @@
+name: Schedule APOD Scraper
+on: push
+jobs:
+  run-apod-scraper:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: pip install -r .github/workflows/requirements.txt
+
+      - name: Run APOD scraper
+        run: python .github/workflows/apod_scraper.py
+
+      - name: Commit files
+        id: commit
+        run: |
+          git config --local user.email "1933549736@qq.com"
+          git config --local user.name "Yak0xff"
+          git add --all
+          if [-z "$(git status --porcelain)"]; then
+             echo "::set-output name=push::false"
+          else
+             git commit -m "Add changes" -a
+             echo "::set-output name=push::true"
+          fi
+        shell: bash
+      - name: Push changes
+        if: steps.commit.outputs.push == 'true'
+        uses: ad-m/github-push-action@master
+        with:
+           github_token: ${{ secrets.GH_APOD_ACTION_TOKEN }}
